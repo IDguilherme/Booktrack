@@ -3,7 +3,7 @@ const fs = require('fs')
 const db = require('../db/database')
 
 async function realizarBackup() {
-  const pastaBackups = path.join(__dirname, '..', '..', 'backups')
+  const pastaBackups = process.env.BACKUP_DIR || path.join(__dirname, '..', '..', 'backups')
 
   if (!fs.existsSync(pastaBackups)) {
     fs.mkdirSync(pastaBackups)

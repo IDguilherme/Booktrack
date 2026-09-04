@@ -1,7 +1,10 @@
 const Database = require('better-sqlite3')
 const path = require('path')
 
-const caminhoBanco = path.join(__dirname, '..', '..', 'booktrack.db')
+// Em produção, defina DB_PATH apontando para um volume persistente
+// (ex.: /data/booktrack.db no Railway) para o banco não ser perdido
+// a cada novo deploy.
+const caminhoBanco = process.env.DB_PATH || path.join(__dirname, '..', '..', 'booktrack.db')
 
 const db = new Database(caminhoBanco)
 

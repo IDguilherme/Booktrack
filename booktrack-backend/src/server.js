@@ -15,7 +15,9 @@ const dashboardRoutes = require('./routes/dashboard')
 const app = express()
 const PORTA = process.env.PORT || 3000
 
-app.use(cors())
+// Em produção, defina CORS_ORIGIN com a URL do front-end (ex.: https://booktrack.vercel.app)
+// para restringir quem pode chamar a API. Sem essa variável, libera qualquer origem.
+app.use(cors({ origin: process.env.CORS_ORIGIN || true }))
 app.use(express.json())
 
 app.get('/', (req, res) => {
