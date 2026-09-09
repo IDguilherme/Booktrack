@@ -4,6 +4,7 @@ const cron = require('node-cron')
 
 const autenticar = require('./middlewares/autenticar')
 const { realizarBackup } = require('./utils/backup')
+const { uploadsDir } = require('./config/uploads')
 
 const authRoutes = require('./routes/auth')
 const usuariosRoutes = require('./routes/usuarios')
@@ -19,6 +20,9 @@ const PORTA = process.env.PORT || 3000
 // para restringir quem pode chamar a API. Sem essa variável, libera qualquer origem.
 app.use(cors({ origin: process.env.CORS_ORIGIN || true }))
 app.use(express.json())
+
+// Capas de livros - acesso público (são só imagens de capa, não dados sensíveis)
+app.use('/uploads', express.static(uploadsDir))
 
 app.get('/', (req, res) => {
   res.json({ mensagem: 'API do Booktrack rodando 📚' })

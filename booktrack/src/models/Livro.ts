@@ -11,6 +11,7 @@ export interface Livro {
   categoria: string
   ano: number
   quantidade: number
+  capaUrl?: string | null
 
   emprestimos: EmprestimoAtual[]
 }

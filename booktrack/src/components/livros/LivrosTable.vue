@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import type { Livro } from '../../models/Livro'
 import { LivroService } from '../../services/livros/LivroService'
+import { API_BASE } from '../../services/api'
 import { useToast } from '../../composables/useToast'
 import { useConfirm } from '../../composables/useConfirm'
 
@@ -116,6 +117,7 @@ onMounted(() => {
 
         <thead>
           <tr>
+            <th>Capa</th>
             <th>Título</th>
             <th>Autor</th>
             <th>Categoria</th>
@@ -135,6 +137,17 @@ onMounted(() => {
           >
 
             <tr>
+
+              <td>
+                <div class="capa-miniatura">
+                  <img
+                    v-if="livro.capaUrl"
+                    :src="`${API_BASE}${livro.capaUrl}`"
+                    :alt="`Capa de ${livro.titulo}`"
+                  />
+                  <span v-else>📕</span>
+                </div>
+              </td>
 
               <td>{{ livro.titulo }}</td>
 
@@ -246,7 +259,7 @@ onMounted(() => {
               class="linha-emprestimo"
             >
 
-              <td colspan="8">
+              <td colspan="9">
 
                 <div class="form-emprestimo">
 
@@ -311,6 +324,25 @@ onMounted(() => {
 
 
 <style scoped>
+
+.capa-miniatura {
+  width: 40px;
+  height: 55px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 18px;
+}
+
+.capa-miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .lista {
   background: white;
   border-radius: 12px;

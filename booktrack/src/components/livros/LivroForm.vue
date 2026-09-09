@@ -15,6 +15,9 @@ const ano = ref<number | null>(null)
 const quantidade = ref<number | null>(null)
 const salvando = ref(false)
 
+const arquivoCapa = ref<File | null>(null)
+const previewCapa = ref<string | null>(null)
+
 const categorias = [
   'Literatura',
   'Romance',
@@ -27,6 +30,28 @@ const categorias = [
   'Infantil',
   'Outro'
 ]
+
+function selecionarCapa(evento: Event) {
+  const input = evento.target as HTMLInputElement
+  const arquivo = input.files?.[0]
+
+  if (!arquivo) {
+    return
+  }
+
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(arquivo.type)) {
+    toast.erro('Use uma imagem JPG, PNG ou WEBP.')
+    return
+  }
+
+  if (arquivo.size > 5 * 1024 * 1024) {
+    toast.erro('A imagem deve ter no máximo 5MB.')
+    return
+  }
+
+  arquivoCapa.value = arquivo
+  previewCapa.value = URL.createObjectURL(arquivo)
+}
 
 async function salvarLivro() {
   if (!titulo.value || !autor.value || !categoria.value || !quantidade.value) {
@@ -45,7 +70,18 @@ async function salvarLivro() {
   salvando.value = true
 
   try {
-    await LivroService.salvar(novoLivro)
+    const { id } = await LivroService.salvar(novoLivro)
+
+    if (arquivoCapa.value) {
+      try {
+        await LivroService.uploadCapa(id, arquivoCapa.value)
+      } catch (erroCapa) {
+        toast.erro('Livro cadastrado, mas a capa não pôde ser enviada.')
+        router.push('/livros')
+        return
+      }
+    }
+
     toast.sucesso('Livro cadastrado com sucesso!')
     router.push('/livros')
   } catch (erro) {
@@ -62,6 +98,29 @@ async function salvarLivro() {
     <section class="grupo">
 
       <h2>Informações do Livro</h2>
+
+      <div class="campo">
+        <label>Capa do livro (opcional)</label>
+
+        <div class="upload-capa">
+
+          <div class="preview-capa">
+            <img
+              v-if="previewCapa"
+              :src="previewCapa"
+              alt="Pré-visualização da capa"
+            />
+            <span v-else>📕</span>
+          </div>
+
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            @change="selecionarCapa"
+          />
+
+        </div>
+      </div>
 
       <div class="campo">
         <label>
@@ -166,6 +225,36 @@ async function salvarLivro() {
 </template>
 
 <style scoped>
+
+.upload-capa {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.preview-capa {
+  width: 70px;
+  height: 95px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-size: 28px;
+}
+
+.preview-capa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-capa input[type="file"] {
+  font-size: 14px;
+}
 .formulario {
   display: flex;
   flex-direction: column;

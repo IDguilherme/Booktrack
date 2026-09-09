@@ -65,4 +65,11 @@ export class LivroService {
   static listarMaisEmprestados(): Promise<LivroMaisEmprestado[]> {
     return api.get('/relatorios/livros-mais-emprestados')
   }
+
+  static uploadCapa(livroId: number, arquivo: File): Promise<{ capaUrl: string }> {
+    const formData = new FormData()
+    formData.append('capa', arquivo)
+
+    return api.upload(`/livros/${livroId}/capa`, formData)
+  }
 }

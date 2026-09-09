@@ -1,12 +1,44 @@
 const express = require('express')
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
+
 const db = require('../db/database')
+const { uploadsDir } = require('../config/uploads')
 
 const router = express.Router()
+
+const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
+
+const armazenamento = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const extensao = path.extname(file.originalname).toLowerCase()
+    cb(null, `livro-${req.params.id}-${Date.now()}${extensao}`)
+  }
+})
+
+const upload = multer({
+  storage: armazenamento,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (!TIPOS_PERMITIDOS.includes(file.mimetype)) {
+      return cb(new Error('Formato de imagem não suportado. Use JPG, PNG ou WEBP.'))
+    }
+
+    cb(null, true)
+  }
+})
 
 // GET /api/livros - lista todos os livros da escola, com os empréstimos ativos de cada um
 router.get('/', (req, res) => {
   const livros = db
-    .prepare('SELECT * FROM livros WHERE escola_id = ? ORDER BY titulo')
+    .prepare(`
+      SELECT id, escola_id, titulo, autor, categoria, ano, quantidade, capa_url AS capaUrl
+      FROM livros
+      WHERE escola_id = ?
+      ORDER BY titulo
+    `)
     .all(req.escolaId)
 
   const buscarEmprestimos = db.prepare(
@@ -159,6 +191,40 @@ router.post('/:id/devolver/:emprestimoId', (req, res) => {
   transacao()
 
   res.json({ devolvido: true })
+})
+
+// POST /api/livros/:id/capa - faz upload/substitui a capa do livro
+router.post('/:id/capa', (req, res) => {
+  upload.single('capa')(req, res, erro => {
+    if (erro) {
+      return res.status(400).json({ erro: erro.message })
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ erro: 'Envie uma imagem.' })
+    }
+
+    const livro = db
+      .prepare('SELECT id, capa_url FROM livros WHERE id = ? AND escola_id = ?')
+      .get(req.params.id, req.escolaId)
+
+    if (!livro) {
+      fs.unlink(req.file.path, () => {})
+      return res.status(404).json({ erro: 'Livro não encontrado.' })
+    }
+
+    // Remove a capa antiga, se existir, para não acumular arquivos sem uso
+    if (livro.capa_url) {
+      const caminhoAntigo = path.join(uploadsDir, path.basename(livro.capa_url))
+      fs.unlink(caminhoAntigo, () => {})
+    }
+
+    const capaUrl = `/uploads/${req.file.filename}`
+
+    db.prepare('UPDATE livros SET capa_url = ? WHERE id = ?').run(capaUrl, livro.id)
+
+    res.json({ capaUrl })
+  })
 })
 
 module.exports = router

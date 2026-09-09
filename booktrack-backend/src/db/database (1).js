@@ -116,6 +116,14 @@ function inicializar() {
 
     console.log('Usuário padrão criado -> e-mail: admin@escola.com | senha: admin123')
   }
+
+  // Migração: adiciona a coluna capa_url em bancos criados antes dessa funcionalidade existir
+  const colunasLivros = db.prepare('PRAGMA table_info(livros)').all()
+  const temCapaUrl = colunasLivros.some(coluna => coluna.name === 'capa_url')
+
+  if (!temCapaUrl) {
+    db.exec('ALTER TABLE livros ADD COLUMN capa_url TEXT')
+  }
 }
 
 inicializar()

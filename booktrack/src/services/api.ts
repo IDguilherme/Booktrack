@@ -3,6 +3,10 @@
 // (ex.: https://booktrack-backend.up.railway.app/api).
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
+// Endereço base do backend, sem o "/api" no final - usado para montar URLs
+// de arquivos servidos estaticamente (ex.: capas de livros em /uploads/...).
+export const API_BASE = API_URL.replace(/\/api\/?$/, '')
+
 function obterToken(): string | null {
   return localStorage.getItem('booktrack_token')
 }
@@ -65,5 +69,22 @@ export const api = {
 
   delete(caminho: string) {
     return fetch(`${API_URL}${caminho}`, { method: 'DELETE', headers: cabecalhos() }).then(tratarResposta)
+  },
+
+  upload(caminho: string, formData: FormData) {
+    const token = obterToken()
+    const headers: Record<string, string> = {}
+
+    // Não define Content-Type manualmente: o navegador precisa gerar o
+    // boundary correto do multipart/form-data sozinho.
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+
+    return fetch(`${API_URL}${caminho}`, {
+      method: 'POST',
+      headers,
+      body: formData
+    }).then(tratarResposta)
   }
 }
